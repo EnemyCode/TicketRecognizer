@@ -4,14 +4,16 @@
 # be careful when using it with a very large image, it will freeze your pc, 800x600 recomended
 #######################
 
-import cv2
+import cv2, sys
 import pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-img = cv2.imread("ticket2.jpg")
+img = cv2.imread("ticket3.jpg")
 
 height, width, _ = img.shape
 max_width, min_width = 1200, 800
+config_tess = r"--oem 1 --psm 6"
+
 
 print(f"Image dimensions: {width}x{height}")
 
@@ -25,7 +27,7 @@ elif width > min_width:
     scale = (min_width / width)
     new_width, new_height = int(width * scale), int(height * scale)
     img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
-    print(f"image reduced: {(max_width / width)}")
+    print(f"image rescaled: {(max_width / width)}")
     reescaled = True
 else:
     print("the image doesnt need to reescale")
@@ -41,11 +43,15 @@ roi_selection = img[int(y):int(y+h), int(x):int(x+w)]
 gray = cv2.cvtColor(roi_selection, cv2.COLOR_BGR2GRAY)
 blur = cv2.GaussianBlur(gray, (3,3), 0)
 thresh = cv2.adaptiveThreshold(
-    blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
+    blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 9
 )
+cv2.destroyAllWindows()
 
 cv2.imshow("Ticket", thresh)
-cv2.waitKey(0)
 
-text = pytesseract.image_to_string(thresh, lang="spa")
+while True:
+    if cv2.waitKey(0) & 0xFF == ord('q'):
+        break
+
+text = pytesseract.image_to_string(thresh, config=config_tess, lang="spa")
 print(text)
